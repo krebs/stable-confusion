@@ -26,7 +26,7 @@
 
       out.stopped = false;
 
-      out.center = Math.floor((initData.length + 1) / 2);
+      out.center = 1 + Math.floor((initData.length + 1) / 2);
       out.current = out.center;
 
       initData.forEach(function (img) {
