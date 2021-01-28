@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*!
  * app.js is the server component of Mediengewitter
  *

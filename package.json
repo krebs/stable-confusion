@@ -1,4 +1,6 @@
 {
+  "name": "mediengewitter",
+  "version": "1.0.0",
   "dependencies": {
     "connect": "*",
     "connect-cache": "*",
@@ -6,5 +8,7 @@
     "socket.io": "=0.9.16",
     "express": "=3.4.7",
     "sanitizer": "*"
-  }
+  },
+  "main": "app.js",
+  "bin": "app.js"
 }
