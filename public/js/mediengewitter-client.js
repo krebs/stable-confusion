@@ -4,8 +4,8 @@
  * Connects to a websocket server and reacts to events
  *
  * @author pfleidi
- * @author felix
- *
+ * @author makefu
+ * @author samularity
  */
 
 (function (window, document, undefined) {
@@ -17,6 +17,35 @@
         console.log(msg);
       } catch (e) { }
     }
+
+    const ws = new WebSocket('ws://localhost:8080')
+    ws.onopen = () => {
+      console.log('ws opened on browser')
+    }
+
+    (() => {
+      ws.onmessage = (message) => {
+          console.log('got message')
+          console.log(message.data)
+          try {
+            var msg = JSON.parse(message.data);
+            console.log(msg)
+            switch (msg.type) {
+              case 'cache' : evalCache(msg.payload);
+                break;
+              case 'chat' : evalChat(msg.payload);
+                chatfield =  document.getElementById('chatfield');
+                chatfield.scrollTop = chatfield.scrollHeight;
+                break;
+              default:
+                console.dir(msg)
+                log('unknown type'+ msg.type );
+            }
+          } catch (err) {
+            log('Error while parsing data:' + err);
+          }
+      }
+    })()
 
     function createCache(initData) {
 
@@ -113,55 +142,18 @@
       if ( text === '') {
         return;
       }
-      socket.send(JSON.stringify ( { type : 'chat', payload : { action: "msg", data : text}}));
+      ws.send(JSON.stringify ( { type : 'chat', payload : { action: "msg", data : text}}));
       $('#chatInput').val('');
     }
-    
-    function connect() {
-      socket = io.connect();
-      $('#chatbutton').click ( sendText);
 
-
-
-      socket.on('message', function (data) {
-          try {
-            var msg = JSON.parse(data);
-            switch (msg.type) {
-              case 'cache' : evalCache(msg.payload);
-                break;
-              case 'chat' : evalChat(msg.payload);
-                chatfield =  document.getElementById('chatfield');
-                chatfield.scrollTop = chatfield.scrollHeight;
-                break;
-              default:
-                console.dir(msg)
-                log('unknown type'+ msg.type );
-            }
-          } catch (err) {
-            log('Error while parsing data:' + err);
-          }
-
-        });
-
-      socket.on('disconnect', function () {
-          log('Connection closed');
-          setTimeout(1000, connect);
-        });
-      // swipe gestures
-      $('#container').touchwipe({
-             wipeLeft: function() { cache.next() },
-           wipeRight: function() { cache.prev() },
-           min_move_x: 20,
-           preventDefaultEvents: true
-      });
-
-    }
     function evalCache(payload){
       switch (payload.action) {
         case 'init' :
+          console.log('init image cache')
           cache = createCache(payload.data);
           break;
         case 'nextImage' :
+          console.log('next image')
           cache.update(payload.data);
           break;
         default:
@@ -206,11 +198,12 @@
 
     function adjustRatio() {
       var img = $('.current :first-child');
-
+/*
       img.aeImageResize({
           height: $('.current').height(),
           width: $('.current').width()
         });
+*/
     }
 
     function getWebSocketUri() {
@@ -222,7 +215,7 @@
 
     $(document).ready(function () {
         adjustRatio();
-        connect();
+        //connect();
       });
 
     $(window).resize(function () {
