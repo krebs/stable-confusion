@@ -21,7 +21,7 @@ connected = set()
 async def handler(websocket):
 
     connected.add(websocket) #add client to list
-    print(f"{websocket.remote_address[0]} just connected")
+    print(f"{websocket.request_headers.get('X-Forwarded-For')} just connected")
 
     try:
         #send init sequence/imagecache to new client
@@ -40,7 +40,7 @@ async def handler(websocket):
                 indata = json.loads(message)
                 if indata["type"] == "chat":
                     #print("Received message from client: " + message)
-                    print( f"msg:{websocket.remote_address[0]}: {indata['payload']['data']} ")
+                    print( f"msg:{websocket.request_headers.get('X-Forwarded-For')}: {indata['payload']['data']} ")
                     chatmsg = {
                         "type":"chat",
                         "payload":{
@@ -52,7 +52,7 @@ async def handler(websocket):
             except:
                 pass
     except websockets.exceptions.ConnectionClosed as e:
-        print(f"{websocket.remote_address[0]} disconnected")
+        print(f"{websocket.request_headers.get('X-Forwarded-For')} disconnected")
     finally:
         connected.remove(websocket)
 
