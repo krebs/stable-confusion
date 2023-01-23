@@ -18,7 +18,8 @@
       } catch (e) { }
     }
 
-    const ws = new WebSocket('ws://localhost:8080')
+    //const ws = new WebSocket('ws://localhost:8080')
+    const ws = new WebSocket(getWebSocketUri())
     ws.onopen = () => {
       console.log('ws opened on browser')
     }
