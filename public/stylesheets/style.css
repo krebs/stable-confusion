@@ -196,3 +196,28 @@ footer a {
   box-shadow: 0px 0px 5px #000;
   opacity: 0.8;
 }
+
+/* Specifies the size of the audio container */
+audio {
+  width: 200px;
+  height: 25px;
+  margin: 5px 10em 0px;
+}
+
+audio::-webkit-media-controls-panel {
+  -webkit-justify-content: center;
+  height: 25px;
+}
+
+/* Removes the timeline */
+audio::-webkit-media-controls-timeline {
+  display: none !important;
+}
+
+/* Removes the time stamp */
+audio::-webkit-media-controls-current-time-display {
+  display: none;
+}
+audio::-webkit-media-controls-time-remaining-display {
+  display: none;
+}
