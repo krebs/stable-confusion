@@ -199,7 +199,8 @@
     }
 
     function genItem(imageData) {
-      var next = $('<section><img src="' + imageData + '" /></section>');
+      var next = $('<section><img src="' + imageData + '" referrerpolicy="no-referrer"/></section>');
+
       $('#container').append(next);
 
       return next;
