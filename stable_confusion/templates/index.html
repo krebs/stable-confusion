@@ -39,8 +39,8 @@
                 document.getElementById("host_prompt_submit").onclick = function (){
                     var prompt = document.getElementById("host_prompt_text").value;
                     socket.emit('host_prompt_submit', {'prompt':prompt});
-                    
                 }
+                
                 document.getElementById("host_finish_round").onclick = function (){
                     document.getElementById("host_prompt").classList.add("is-hidden")
                     document.getElementById("host_reveal").classList.remove("is-hidden")
@@ -67,7 +67,12 @@
                     document.getElementById("host_reveal").classList.add("is-hidden")
                     document.getElementById("guesser_prompt").classList.add("is-hidden")
                     document.getElementById("guesser_prompt_submit").disabled = true
-
+                    document.getElementById("guesser_pic").src = "{{ url_for('static', filename='img/wait.png' )}}";
+                    document.getElementById("host_pic_0").src = "{{ url_for('static', filename='img/wait.png' )}}";
+                    document.getElementById("host_pic_1").src = "{{ url_for('static', filename='img/wait.png' )}}";
+                    document.getElementById("host_pic_2").src = "{{ url_for('static', filename='img/wait.png' )}}";
+                    document.getElementById("host_pic_3").src = "{{ url_for('static', filename='img/wait.png' )}}";
+                    document.getElementById("reveal_list").innerHTML = '';
 
                 });
                 ///////////////////// Role: Guesser ////////////////////////
@@ -75,13 +80,13 @@
                     socket.emit('choose_guesser');
                 }
 
-
                 document.getElementById("guesser_prompt_submit").onclick = function() {
                     var guess = document.getElementById("guesser_input").value
                     socket.emit("send_guess",{"prompt":guess})
                 }
+
                 socket.on('host_receive_guess', function(data) {
-                    nick = data["nick"]
+                    var nick = data["nick"]
                     var nick_id = `nick_${nick}`;
                     console.debug(data)
                     existing_field = document.getElementById(nick_id)
@@ -92,12 +97,14 @@
                         var li = document.createElement("div");
                         li.innerHTML = data["prompt"]
                         li.setAttribute("id", nick_id);
+                        li.setAttribute("class","guess_row")
+
                         if (reveal_list.children.length % 2 == 0){
                             li.setAttribute("style","background:orange")
                         }
                         reveal_list.appendChild(li);
                         li.onclick = function() {
-                            socket.emit('choose_winner',{"nick":nick, prompt: data["prompt"]});
+                            socket.emit('choose_winner',{"nick":data["nick"], prompt: data["prompt"]});
                         }
                     }
 
@@ -162,6 +169,12 @@
                 height: 100px;
                 margin: 10px;
             }
+            .guess_row {
+                height: 50px;
+                text-align: center;
+                padding: 10px;
+                font-weight: bold;
+            }
             #reveal_list > li:nth-child(even){
                 background: rgb(185, 185, 185);
             }
@@ -207,10 +220,12 @@
                     <button id="host_finish_round" class="button is-info" style="margin-top: 5px; width: 500px">Finish round</button>
 
                 </div>
+
                 <div class="game_row">
                     <img id=host_pic_0 disabled width="500" style="margin:5px" src="{{ url_for('static', filename='img/wait.png' )}}">
                     <img id=host_pic_1 disabled width="500" style="margin:5px" src="{{ url_for('static', filename='img/wait.png' )}}">
                 </div>
+
                 <div class="game_row">
                     <img id=host_pic_2 disabled width="500" style="margin:5px" src="{{ url_for('static', filename='img/wait.png' )}}">
                     <img id=host_pic_3 disabled width="500" style="margin:5px" src="{{ url_for('static', filename='img/wait.png' )}}">
@@ -222,7 +237,7 @@
                 <div id="guesser_prompt_info">Click on the Guess you like the most. <br/>It does not have to be the one closest to the original prompt</div>
 
                 <h2>Guesses:</h2>
-                <div id="reveal_list" class="block" >
+                <div id="reveal_list" class="block"></div>
 
                 </div>
             </div>
