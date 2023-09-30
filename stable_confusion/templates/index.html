@@ -141,7 +141,9 @@
                     var text = data['text'];
                     var sender = data['sender'];
 
-                    document.getElementById("chat").innerHTML += `${sender}: ${text}\n`;   
+                    chat = document.getElementById("chat");
+                    chat.innerHTML += `${sender}: ${text}\n`;
+                    chat.scrollTop = chat.scrollHeight;
                 });
 
                 document.getElementById("nick_button").onclick = function() {
@@ -239,7 +241,6 @@
                 <h2>Guesses:</h2>
                 <div id="reveal_list" class="block"></div>
 
-                </div>
             </div>
             <div id="guesser_prompt" class="game_stage is-hidden">
                 <center>
@@ -252,7 +253,6 @@
                     </div>
                 </center>
             </div>
-        </div>        
-    
+        </div>
     </div>
 </body>
