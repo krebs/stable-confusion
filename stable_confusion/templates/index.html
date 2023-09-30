@@ -1,0 +1,243 @@
+<html>
+    <head>
+        <!-- Some basic meta info -->
+        <title>Example</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- A stylesheet to make things automatically look nice -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/bulma.min.css' )}}">
+
+        <!-- Link to the socket.io info -->
+        <script src="{{ url_for('static', filename='js/jquery.min.js' )}}" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='js/socket.io.js' )}}" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+
+        <!-- Script to handle socket.io -->
+        <script>
+            var socket;            
+            $(document).ready(function() {
+                // The http vs. https is important. Use http for localhost!
+                socket = io.connect('http://' + document.domain + ':' + location.port);
+
+
+                /////////////////// Role: HOST  /////////////////////////
+                document.getElementById("choose_host").onclick = function() {
+                    socket.emit('choose_host');
+                }
+                document.getElementById("host_pic_0").onclick = function() {
+                    socket.emit('choose_host_pic',{"image": 0});
+                }
+                document.getElementById("host_pic_1").onclick = function() {
+                    socket.emit('choose_host_pic',{"image": 1});
+                }
+                document.getElementById("host_pic_2").onclick = function() {
+                    socket.emit('choose_host_pic',{"image": 2});
+                }
+                document.getElementById("host_pic_3").onclick = function() {
+                    socket.emit('choose_host_pic',{"image": 3});
+                }
+                document.getElementById("host_prompt_submit").onclick = function (){
+                    var prompt = document.getElementById("host_prompt_text").value;
+                    socket.emit('host_prompt_submit', {'prompt':prompt});
+                    
+                }
+                document.getElementById("host_finish_round").onclick = function (){
+                    document.getElementById("host_prompt").classList.add("is-hidden")
+                    document.getElementById("host_reveal").classList.remove("is-hidden")
+                }
+                socket.on('host_prompt_reply', function(data) {
+                    console.log(`Got Host prompt reply ${data}`)
+                    console.debug(data)
+                    data["images"].forEach(function (image,index) {
+                        console.debug(image)
+                        console.debug(index)
+                        document.getElementById(`host_pic_${index}`).src = `data:image/png;base64,${image}`
+                        document.getElementById(`host_pic_${index}`).disabled = false
+                    })
+                });
+                // The Host was chosen
+                socket.on('is_host', function(data) {
+                    document.getElementById("prepare").classList.add("is-hidden")
+                    document.getElementById("host_prompt").classList.remove("is-hidden")
+                });
+
+                socket.on('new_game', function(data) {
+                    document.getElementById("prepare").classList.remove("is-hidden")
+                    document.getElementById("host_prompt").classList.add("is-hidden")
+                    document.getElementById("host_reveal").classList.add("is-hidden")
+                    document.getElementById("guesser_prompt").classList.add("is-hidden")
+                    document.getElementById("guesser_prompt_submit").disabled = true
+
+
+                });
+                ///////////////////// Role: Guesser ////////////////////////
+                document.getElementById("choose_guesser").onclick = function() {
+                    socket.emit('choose_guesser');
+                }
+
+
+                document.getElementById("guesser_prompt_submit").onclick = function() {
+                    var guess = document.getElementById("guesser_input").value
+                    socket.emit("send_guess",{"prompt":guess})
+                }
+                socket.on('host_receive_guess', function(data) {
+                    nick = data["nick"]
+                    var nick_id = `nick_${nick}`;
+                    console.debug(data)
+                    existing_field = document.getElementById(nick_id)
+                    reveal_list = document.getElementById("reveal_list")
+                    if (existing_field){
+                        existing_field.innerHTML = `${data["prompt"]}`
+                    } else {
+                        var li = document.createElement("div");
+                        li.innerHTML = data["prompt"]
+                        li.setAttribute("id", nick_id);
+                        if (reveal_list.children.length % 2 == 0){
+                            li.setAttribute("style","background:orange")
+                        }
+                        reveal_list.appendChild(li);
+                        li.onclick = function() {
+                            socket.emit('choose_winner',{"nick":nick, prompt: data["prompt"]});
+                        }
+                    }
+
+                })
+
+                socket.on('guesser_send_pic', function(data) {
+                    var image = data["image"]
+                    document.getElementById("guesser_pic").src = `data:image/png;base64,${image}`
+                    document.getElementById("guesser_prompt_submit").disabled = false
+                })
+
+                socket.on('is_guesser', function(data) {
+                    document.getElementById("prepare").classList.add("is-hidden")
+                    document.getElementById("guesser_prompt").classList.remove("is-hidden")
+                })
+
+                ///////////////// Chat
+                // Message recieved from server
+                document.getElementById("send_button").onclick = function() {
+                    // Get the text value
+                    var text = document.getElementById("textfield_input").value;
+
+                    // Update the chat window
+                    //document.getElementById("chat").innerHTML += text + "\n\n";                    
+                    
+                    // Emit a message to the 'send_message' socket
+                    socket.emit('send_message', {'text':text});
+                    
+                    // Set the textfield input to empty
+                    document.getElementById("textfield_input").value = "";
+                }
+
+                socket.on('message_from_server', function(data) {
+                    var text = data['text'];
+                    var sender = data['sender'];
+
+                    document.getElementById("chat").innerHTML += `${sender}: ${text}\n`;   
+                });
+
+                document.getElementById("nick_button").onclick = function() {
+                    var new_nick = document.getElementById("nick_input").value
+                    //document.getElementById("nick_tag").textContent = new_nick
+                    socket.emit('change_nick',{ "nick": new_nick})
+                }
+            });
+        </script>
+        <style>
+            .game_stage {
+                display: flex;
+                flex-direction: column;
+                margin: 25px;
+            }
+            .game_row {
+                display: flex;
+                flex-direction: row;
+            }
+            .hidden {
+                visibility: hidden;
+            }
+            .full-size {
+                width: 500px;
+                height: 100px;
+                margin: 10px;
+            }
+            #reveal_list > li:nth-child(even){
+                background: rgb(185, 185, 185);
+            }
+        </style>
+        <nav class="navbar is-primary">
+            <div class="navbar-brand">
+                <a class="navbar-item"  href="https://stable-confusion.r" >
+                    <b>Stable Confusion Game</b>
+                </a>
+            </div>
+          </nav>
+    </head>
+
+<body>
+
+    <div class="content">
+
+        <div class="columns">
+            <div class="game_stage column is-one-quarter" id="chat_column">
+                <div class="game_row">
+                    <input  placeholder="New Nickname" type="text" id="nick_input" style="margin-top: 5px; margin-right: 10px; width: auto;" class="textfield"> 
+                    <button id="nick_button" class="button is-primary" style="margin-top: 5px;">Change Nick</button>
+                </div>
+                <textarea id="chat" style="width: auto; height: 250px; font-size: 0.8em;  margin-top: 10px;"></textarea>                 
+                <div class="game_row">
+                    <input type="text" id="textfield_input" style="height: 30px; width: 400px; margin-top: 5px; margin-right: 10px;" class="textfield"> 
+                    <button id="send_button" class="button is-primary" style="margin-top: 5px; width: 120px; height: 30px;">Send</button>
+                </div>
+            </div>
+
+            <div id="prepare" class="game_stage">
+                <div class="game_row">Choose your Destiny</div>
+                <button class="button full-size"  id="choose_guesser">Play as Guesser</button>
+                <button class="button is-primary full-size" id="choose_host">Play as Host</button>
+            </div>
+
+            <div id="host_prompt" class="game_stage is-hidden is-centered">
+                <h2>You are the Host</h2>
+                <div>insert a prompt and press generate</div>
+                <div class="game_row">
+                    <input  placeholder="Your Prompt" type="text" id="host_prompt_text" style="margin-left: 5px; margin-top: 5px; margin-right: 5px; width: 400px" class="textfield"> 
+                    <button id="host_prompt_submit" class="button is-primary" style="margin-top: 5px; margin-right: 10px; width: 95px">Generate</button>
+                    <button id="host_finish_round" class="button is-info" style="margin-top: 5px; width: 500px">Finish round</button>
+
+                </div>
+                <div class="game_row">
+                    <img id=host_pic_0 disabled width="500" style="margin:5px" src="{{ url_for('static', filename='img/wait.png' )}}">
+                    <img id=host_pic_1 disabled width="500" style="margin:5px" src="{{ url_for('static', filename='img/wait.png' )}}">
+                </div>
+                <div class="game_row">
+                    <img id=host_pic_2 disabled width="500" style="margin:5px" src="{{ url_for('static', filename='img/wait.png' )}}">
+                    <img id=host_pic_3 disabled width="500" style="margin:5px" src="{{ url_for('static', filename='img/wait.png' )}}">
+                </div>
+
+            </div>
+            <div id="host_reveal" class="game_stage is-hidden is-centered">
+                <h2> Reveal Phase</h2>
+                <div id="guesser_prompt_info">Click on the Guess you like the most. <br/>It does not have to be the one closest to the original prompt</div>
+
+                <h2>Guesses:</h2>
+                <div id="reveal_list" class="block" >
+
+                </div>
+            </div>
+            <div id="guesser_prompt" class="game_stage is-hidden">
+                <center>
+                    <h2 style="margin:10px">You are a Guesser</h2>
+                    <div id="guesser_prompt_info">wait for the host to choose an image for his prompt</div>
+                    <img width="500" id=guesser_pic src="{{ url_for('static', filename='img/wait.png' )}}">
+                    <div class="game_row" style="margin-top:10px;margin-bottom:20px">
+                        <input  placeholder="Your Guess" type="text" id="guesser_input" style="margin-top: 5px; margin-right: 10px; width: 400px;" class="textfield"> 
+                        <button disabled id="guesser_prompt_submit" class="button is-primary" style="margin-top: 5px; width:90px">Guess!</button>
+                    </div>
+                </center>
+            </div>
+        </div>        
+    
+    </div>
+</body>
